@@ -1,4 +1,4 @@
-import create from 'zustand';
+import { create } from 'zustand';
 import Graph from 'graphology';
 import { nanoid } from 'nanoid';
 import { importFromJSON, exportToJSON, createEmptyGraph } from './graphHelpers';
@@ -59,7 +59,15 @@ export const useGraphStore = create<GraphStore>((set, get) => {
     layout: null,
     filters: { nodeTypes: [] },
     loadGraphFromJSON(json) {
-      set({ graph: importFromJSON(json), selection: { nodes: [], edges: [] } });
+      const graph = importFromJSON(json);
+      const needsLayout = graph.nodes().some(key => {
+        const attrs = graph.getNodeAttributes(key);
+        return typeof attrs.x !== 'number' || typeof attrs.y !== 'number';
+      });
+      if (needsLayout) {
+        applyCircular(graph);
+      }
+      set({ graph, selection: { nodes: [], edges: [] } });
     },
     exportGraphJSON() {
       return exportToJSON(get().graph);
