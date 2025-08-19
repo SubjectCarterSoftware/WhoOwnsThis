@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useGraphStore } from '../graph/GraphStore';
 import { openFile, saveFile } from '../graph/persistence';
+import { normalizeGraphJSON } from '../graph/normalize';
 import AddNodeModal from './Modals/AddNodeModal';
 import AddEdgeModal from './Modals/AddEdgeModal';
 import ConfirmDeleteModal from './Modals/ConfirmDeleteModal';
-import { GraphologyJSON } from '../types/graph';
 
 export default function TopBar() {
   const loadGraphFromJSON = useGraphStore(s => s.loadGraphFromJSON);
@@ -25,7 +25,8 @@ export default function TopBar() {
 
   async function handleOpen() {
     const json = await openFile();
-    if (json) loadGraphFromJSON(json as GraphologyJSON);
+    const normalized = normalizeGraphJSON(json);
+    if (normalized) loadGraphFromJSON(normalized);
   }
 
   async function handleSave() {
