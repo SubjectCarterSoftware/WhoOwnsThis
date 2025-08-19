@@ -26,7 +26,7 @@ interface GraphStore {
   selectEdges: (edges: string[]) => void;
   runLayout: (name: Layout) => void;
   stopLayout: () => void;
-  applyFilters: (f: { nodeTypes: string[] }) => void;
+  applyFilters: (partial?: Partial<{ nodeTypes: string[] }>) => void;
   clearFilters: () => void;
   undo: () => void;
   redo: () => void;
@@ -129,8 +129,8 @@ export const useGraphStore = create<GraphStore>((set, get) => {
     selectEdges(edges) {
       set({ selection: { ...get().selection, edges } });
     },
-    applyFilters(f) {
-      set({ filters: f });
+    applyFilters(partial) {
+      set(s => ({ filters: { ...s.filters, ...(partial || {}) } }));
     },
     clearFilters() {
       set({ filters: { nodeTypes: [] } });
