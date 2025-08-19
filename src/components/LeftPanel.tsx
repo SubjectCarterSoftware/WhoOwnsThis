@@ -7,13 +7,26 @@ export default function LeftPanel() {
   const applyFilters = useGraphStore(s => s.applyFilters);
   const clearFilters = useGraphStore(s => s.clearFilters);
 
-  const nodeTypes = Array.from(new Set(graph.nodes().map(n => graph.getNodeAttribute(n, 'type')).filter(Boolean)));
+  const nodeTypes = React.useMemo(
+    () =>
+      Array.from(
+        new Set(
+          graph
+            .nodes()
+            .map(n => graph.getNodeAttribute(n, 'type'))
+            .filter(Boolean)
+        )
+      ),
+    [graph]
+  );
 
   function toggle(type: string) {
     const newTypes = filters.nodeTypes.includes(type)
       ? filters.nodeTypes.filter(t => t !== type)
       : [...filters.nodeTypes, type];
-    applyFilters({ nodeTypes: newTypes });
+
+    if (newTypes.length === 0) clearFilters();
+    else applyFilters({ nodeTypes: newTypes });
   }
 
   return (
