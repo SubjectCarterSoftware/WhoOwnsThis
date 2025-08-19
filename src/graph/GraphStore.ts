@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import Graph from 'graphology';
 import { nanoid } from 'nanoid';
-import { importFromJSON, exportToJSON, createEmptyGraph } from './graphHelpers';
+import { importFromJSON, exportToJSON } from './graphHelpers';
 import { GraphologyJSON } from '../types/graph';
+import sampleGraph from '../../samples/sample.graph.json';
 import { runForceAtlas2, applyCircular } from './layouts';
 
 type Selection = { nodes: string[]; edges: string[] };
@@ -37,6 +38,18 @@ function cloneGraph(graph: Graph): GraphologyJSON {
   return exportToJSON(graph);
 }
 
+const initialGraph = (() => {
+  const g = importFromJSON(sampleGraph as GraphologyJSON);
+  const needsLayout = g.nodes().some(key => {
+    const attrs = g.getNodeAttributes(key);
+    return typeof attrs.x !== 'number' || typeof attrs.y !== 'number';
+  });
+  if (needsLayout) {
+    applyCircular(g);
+  }
+  return g;
+})();
+
 export const useGraphStore = create<GraphStore>((set, get) => {
   const history: GraphologyJSON[] = [];
   const future: GraphologyJSON[] = [];
@@ -54,7 +67,7 @@ export const useGraphStore = create<GraphStore>((set, get) => {
   }
 
   return {
-    graph: createEmptyGraph(),
+    graph: initialGraph,
     selection: { nodes: [], edges: [] },
     layout: null,
     filters: { nodeTypes: [] },
