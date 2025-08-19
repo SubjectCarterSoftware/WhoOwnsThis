@@ -1,6 +1,37 @@
-import { GraphologyJSON } from '../types/graph';
+import { GraphologyJSON } from "../types/graph";
 
-export async function openFile(): Promise<GraphologyJSON | null> {
+export function normalizeGraph(json: any): GraphologyJSON {
+  const safe: GraphologyJSON = {
+    attributes: json?.attributes ?? {},
+    options: {
+      type: json?.options?.type ?? "mixed",
+      multi: Boolean(json?.options?.multi ?? true),
+      allowSelfLoops: Boolean(json?.options?.allowSelfLoops ?? true),
+    },
+    nodes: Array.isArray(json?.nodes)
+      ? json.nodes
+          .map((n: any) => ({
+            key: String(n?.key ?? ""),
+            attributes: (n && typeof n.attributes === "object" && n.attributes) || {},
+          }))
+          .filter((n: any) => n.key)
+      : [],
+    edges: Array.isArray(json?.edges)
+      ? json.edges
+          .map((e: any) => ({
+            key: e?.key ? String(e.key) : undefined,
+            source: String(e?.source ?? ""),
+            target: String(e?.target ?? ""),
+            attributes: (e && typeof e.attributes === "object" && e.attributes) || {},
+            undirected: Boolean(e?.undirected),
+          }))
+          .filter((e: any) => e.source && e.target)
+      : [],
+  };
+  return safe;
+}
+
+export async function openFile(): Promise<any | null> {
   if ((window as any).showOpenFilePicker) {
     const [handle] = await (window as any).showOpenFilePicker({
       types: [{ description: 'Graph JSON', accept: { 'application/json': ['.json'] } }],
