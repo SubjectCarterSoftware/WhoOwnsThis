@@ -58,20 +58,45 @@ export default function Canvas() {
     });
 
     renderer.setSetting('nodeReducer', (node, data) => {
-      if (filters.nodeTypes.length && !filters.nodeTypes.includes(String(data.type))) {
-        return { hidden: true };
+      try {
+        const attrs = sanitizeNodeAttributes(data || {});
+        const types = (filters?.nodeTypes ?? []) as string[];
+        const type = (data?.type ?? '').toString();
+
+        if (!types.length) {
+          return {
+            ...attrs,
+            color: nodeColor(data || {}),
+            size: nodeSize(graph, node, data || {}),
+          };
+        }
+
+        if (!types.includes(type)) return { hidden: true };
+
+        return {
+          ...attrs,
+          color: nodeColor(data || {}),
+          size: nodeSize(graph, node, data || {}),
+        };
+      } catch (e) {
+        console.error('nodeReducer error:', e);
+        return { hidden: false };
       }
-      return {
-        ...sanitizeNodeAttributes(data),
-        color: nodeColor(data),
-        size: nodeSize(graph, node, data),
-      };
     });
-    renderer.setSetting('edgeReducer', (edge, data) => ({
-      ...sanitizeEdgeAttributes(data),
-      color: edgeColor(data),
-      size: edgeSize(data),
-    }));
+
+    renderer.setSetting('edgeReducer', (edge, data) => {
+      try {
+        const attrs = sanitizeEdgeAttributes(data || {});
+        return {
+          ...attrs,
+          color: edgeColor(data || {}),
+          size: edgeSize(data || {}),
+        };
+      } catch (e) {
+        console.error('edgeReducer error:', e);
+        return {};
+      }
+    });
 
     return () => renderer.kill();
   }, [graph, selectNodes, selectEdges, filters]);

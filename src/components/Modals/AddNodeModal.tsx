@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useGraphStore } from '../../graph/GraphStore';
 
 export default function AddNodeModal({ onClose }: { onClose: () => void }) {
@@ -13,8 +14,8 @@ export default function AddNodeModal({ onClose }: { onClose: () => void }) {
     onClose();
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center pointer-events-auto">
       <form onSubmit={handleSubmit} className="bg-white p-4 space-y-2">
         <div>
           <label className="block">Label</label>
@@ -26,6 +27,7 @@ export default function AddNodeModal({ onClose }: { onClose: () => void }) {
         </div>
         <button type="submit" className="px-2 py-1 border bg-gray-100">Add</button>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }
