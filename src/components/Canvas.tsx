@@ -58,7 +58,15 @@ export default function Canvas() {
     });
 
     renderer.setSetting('nodeReducer', (node, data) => {
-      if (filters.nodeTypes.length && !filters.nodeTypes.includes(String(data.type))) {
+      if (!filters?.nodeTypes?.length) {
+        return {
+          ...sanitizeNodeAttributes(data),
+          color: nodeColor(data),
+          size: nodeSize(graph, node, data),
+        };
+      }
+      const type = data.type ? String(data.type) : '';
+      if (!type || !filters.nodeTypes.includes(type)) {
         return { hidden: true };
       }
       return {

@@ -130,7 +130,8 @@ export const useGraphStore = create<GraphStore>((set, get) => {
       set({ selection: { ...get().selection, edges } });
     },
     applyFilters(f) {
-      set({ filters: f });
+      const nodeTypes = Array.isArray(f?.nodeTypes) ? f.nodeTypes.filter(Boolean) : [];
+      set({ filters: { nodeTypes } });
     },
     clearFilters() {
       set({ filters: { nodeTypes: [] } });
