@@ -50,11 +50,17 @@ export default function Canvas() {
       defaultEdgeType: 'default',
     });
 
-    renderer.on('clickNode', e => {
-      selectNodes([e.node]);
+    renderer.on('clickNode', ({ node }) => {
+      selectEdges([]);
+      selectNodes([node]);
     });
-    renderer.on('clickEdge', e => {
-      selectEdges([e.edge]);
+    renderer.on('clickEdge', ({ edge }) => {
+      selectNodes([]);
+      selectEdges([edge]);
+    });
+    renderer.on('clickStage', () => {
+      selectNodes([]);
+      selectEdges([]);
     });
 
     renderer.setSetting("nodeReducer", (node, data) => {
