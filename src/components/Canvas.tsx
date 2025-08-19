@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import Sigma from 'sigma';
 import { useGraphStore } from '../graph/GraphStore';
 import { nodeColor, nodeSize, edgeColor, edgeSize } from '../graph/styling';
+import { sanitizeNodeAttributes, sanitizeEdgeAttributes } from '../graph/sigmaUtils';
 
 export default function Canvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,13 +27,13 @@ export default function Canvas() {
         return { hidden: true };
       }
       return {
-        ...data,
+        ...sanitizeNodeAttributes(data),
         color: nodeColor(data),
         size: nodeSize(graph, node, data),
       };
     });
     renderer.setSetting('edgeReducer', (edge, data) => ({
-      ...data,
+      ...sanitizeEdgeAttributes(data),
       color: edgeColor(data),
       size: edgeSize(data),
     }));
