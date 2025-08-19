@@ -57,8 +57,9 @@ export default function Canvas() {
       selectEdges([e.edge]);
     });
 
+    const nodeTypes = Array.isArray(filters?.nodeTypes) ? filters.nodeTypes : [];
     renderer.setSetting('nodeReducer', (node, data) => {
-      if (filters.nodeTypes.length && !filters.nodeTypes.includes(String(data.type))) {
+      if (nodeTypes.length && !nodeTypes.includes(String(data.type))) {
         return { hidden: true };
       }
       return {
