@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useGraphStore } from '../../graph/GraphStore';
+import ModalFrame from './ModalFrame';
 
 export default function AddEdgeModal({ onClose }: { onClose: () => void }) {
   const addEdge = useGraphStore(s => s.addEdge);
@@ -17,8 +18,8 @@ export default function AddEdgeModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <form onSubmit={handleSubmit} className="bg-white p-4 space-y-2">
+    <ModalFrame>
+      <form onSubmit={handleSubmit} className="space-y-2">
         <div>
           <label className="block">Source</label>
           <select className="border px-2" value={source} onChange={e => setSource(e.target.value)}>
@@ -43,6 +44,6 @@ export default function AddEdgeModal({ onClose }: { onClose: () => void }) {
         </div>
         <button type="submit" className="px-2 py-1 border bg-gray-100">Add</button>
       </form>
-    </div>
+    </ModalFrame>
   );
 }
