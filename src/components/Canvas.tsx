@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import Sigma from 'sigma';
-import { NodeCircleProgram } from 'sigma/rendering';
+import { NodeCircleProgram, EdgeLineProgram } from 'sigma/rendering';
 import { useGraphStore } from '../graph/GraphStore';
 import { nodeColor, nodeSize, edgeColor, edgeSize } from '../graph/styling';
 import { sanitizeNodeAttributes, sanitizeEdgeAttributes } from '../graph/sigmaUtils';
@@ -22,15 +22,32 @@ export default function Canvas() {
       default: NodeCircleProgram,
     } as const;
 
+    const edgeProgramClasses = {
+      REPORTS_TO: EdgeLineProgram,
+      MANAGES: EdgeLineProgram,
+      WORKS_ON: EdgeLineProgram,
+      KNOWS: EdgeLineProgram,
+      BELONGS_TO: EdgeLineProgram,
+      default: EdgeLineProgram,
+    } as const;
+
     graph.forEachNode((key, attrs) => {
       if (!nodeProgramClasses[attrs.type as keyof typeof nodeProgramClasses]) {
         graph.setNodeAttribute(key, 'type', 'default');
       }
     });
 
+    graph.forEachEdge((key, attrs) => {
+      if (!edgeProgramClasses[attrs.type as keyof typeof edgeProgramClasses]) {
+        graph.setEdgeAttribute(key, 'type', 'default');
+      }
+    });
+
     const renderer = new Sigma(graph, containerRef.current, {
       nodeProgramClasses,
+      edgeProgramClasses,
       defaultNodeType: 'default',
+      defaultEdgeType: 'default',
     });
 
     renderer.on('clickNode', e => {
