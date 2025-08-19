@@ -1,16 +1,13 @@
-import React from 'react';
+import React from "react";
 
 export default class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { error: Error | null }
 > {
-  constructor(props: any) {
-    super(props);
-    this.state = { error: null };
-  }
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
+  constructor(props: any) { super(props); this.state = { error: null }; }
+
+  static getDerivedStateFromError(error: Error) { return { error }; }
+
   render() {
     if (this.state.error) {
       return (
