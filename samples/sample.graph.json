@@ -1,0 +1,18 @@
+{
+  "attributes": { "name": "Company Knowledge Graph", "createdAt": "2025-08-19T12:00:00Z" },
+  "options": { "type": "mixed", "multi": true, "allowSelfLoops": true },
+  "nodes": [
+    { "key": "person:1", "attributes": { "label": "Alice", "type": "Person", "role": "Engineer" } },
+    { "key": "person:2", "attributes": { "label": "Bob", "type": "Person", "role": "Manager" } },
+    { "key": "person:3", "attributes": { "label": "Carol", "type": "Person", "role": "Designer" } },
+    { "key": "project:1", "attributes": { "label": "Project X", "type": "Project", "status": "Active" } },
+    { "key": "team:1", "attributes": { "label": "Design Team", "type": "Team", "department": "UX" } }
+  ],
+  "edges": [
+    { "key": "e1", "source": "person:1", "target": "person:2", "attributes": { "type": "REPORTS_TO", "since": "2022-01-01" } },
+    { "key": "e2", "source": "person:2", "target": "project:1", "attributes": { "type": "MANAGES" } },
+    { "key": "e3", "source": "person:3", "target": "project:1", "attributes": { "type": "WORKS_ON", "hoursPerWeek": 20 } },
+    { "key": "e4", "source": "person:1", "target": "person:3", "attributes": { "type": "KNOWS", "strength": 0.8 }, "undirected": true },
+    { "key": "e5", "source": "project:1", "target": "team:1", "attributes": { "type": "BELONGS_TO" } }
+  ]
+}
