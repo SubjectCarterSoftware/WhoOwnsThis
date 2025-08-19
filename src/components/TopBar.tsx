@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useGraphStore } from '../graph/GraphStore';
-import { openFile, saveFile } from '../graph/persistence';
-import { normalizeGraphJSON } from '../graph/normalize';
+import { openFile, saveFile, normalizeGraph } from '../graph/persistence';
 import AddNodeModal from './Modals/AddNodeModal';
 import AddEdgeModal from './Modals/AddEdgeModal';
 import ConfirmDeleteModal from './Modals/ConfirmDeleteModal';
@@ -24,9 +23,11 @@ export default function TopBar() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   async function handleOpen() {
-    const json = await openFile();
-    const normalized = normalizeGraphJSON(json);
-    if (normalized) loadGraphFromJSON(normalized);
+    const raw = await openFile();
+    if (raw) {
+      const json = normalizeGraph(raw);
+      loadGraphFromJSON(json);
+    }
   }
 
   async function handleSave() {

@@ -12,7 +12,13 @@
     { "key": "e1", "source": "person:1", "target": "person:2", "attributes": { "type": "REPORTS_TO", "since": "2022-01-01" } },
     { "key": "e2", "source": "person:2", "target": "project:1", "attributes": { "type": "MANAGES" } },
     { "key": "e3", "source": "person:3", "target": "project:1", "attributes": { "type": "WORKS_ON", "hoursPerWeek": 20 } },
-    { "key": "e4", "source": "person:1", "target": "person:3", "attributes": { "type": "KNOWS", "strength": 0.8 }, "undirected": true },
+    {
+      "key": "e4",
+      "source": "person:1",
+      "target": "person:3",
+      "attributes": { "type": "KNOWS", "strength": 0.8 },
+      "undirected": true
+    },
     { "key": "e5", "source": "project:1", "target": "team:1", "attributes": { "type": "BELONGS_TO" } }
   ]
 }
