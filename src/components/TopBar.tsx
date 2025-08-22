@@ -26,7 +26,7 @@ export default function TopBar() {
     const raw = await openFile();
     if (raw) {
       const json = normalizeGraph(raw);
-      loadGraphFromJSON(json);
+      await loadGraphFromJSON(json);
     }
   }
 
