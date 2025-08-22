@@ -88,8 +88,13 @@ export const useGraphStore = create<GraphStore>((set, get) => {
     addNode(attrs) {
       pushHistory();
       const key = attrs.key || `node:${nanoid(6)}`;
+      const withPos = { ...attrs } as Record<string, any>;
+      if (typeof withPos.x !== 'number' || typeof withPos.y !== 'number') {
+        withPos.x = Math.random();
+        withPos.y = Math.random();
+      }
       const { graph } = get();
-      graph.addNode(key, attrs);
+      graph.addNode(key, withPos);
       set({ graph });
       return key;
     },
@@ -106,7 +111,12 @@ export const useGraphStore = create<GraphStore>((set, get) => {
       pushHistory();
       const { graph } = get();
       const attrs = graph.getNodeAttributes(key);
-      graph.replaceNodeAttributes(key, { ...attrs, ...patch });
+      const next = { ...attrs, ...patch } as Record<string, any>;
+      if (typeof next.x !== 'number' || typeof next.y !== 'number') {
+        next.x = typeof attrs.x === 'number' ? attrs.x : Math.random();
+        next.y = typeof attrs.y === 'number' ? attrs.y : Math.random();
+      }
+      graph.replaceNodeAttributes(key, next);
       set({ graph });
     },
     updateEdgeAttributes(key, patch) {
