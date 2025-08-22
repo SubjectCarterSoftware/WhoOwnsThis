@@ -112,7 +112,12 @@ export default function Canvas() {
         graph.setNodeAttribute(key, 'y', Math.random());
       }
       if ((attrs as any).image) {
-        (ImageProgram as any).setImage((attrs as any).image, (attrs as any).image);
+        // Register the image with sigma's texture manager so it can be used by
+        // the custom node image program.  The previous code called a
+        // non-existent `setImage` function which caused a runtime error.  The
+        // current `@sigma/node-image` API exposes a `textureManager` with a
+        // `registerImage` method instead.
+        (ImageProgram as any).textureManager?.registerImage((attrs as any).image);
       }
     });
 
