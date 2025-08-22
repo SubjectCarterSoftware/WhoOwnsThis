@@ -33,5 +33,16 @@ export function normalizeNode(n: any): GraphNodeAttrs {
 
   out.ui = out.ui || {};
 
+  // Resolve custom avatar image scheme to a concrete, fetchable URL.  The
+  // sample graph uses values such as `avatar:eli` for the `image` attribute.
+  // Browsers treat the `avatar:` protocol as an invalid scheme and block the
+  // request, resulting in CORS errors.  To make these images load properly we
+  // transform any `avatar:NAME` value into a DiceBear avatar URL which is
+  // served with permissive CORS headers.
+  if (typeof out.image === "string" && out.image.startsWith("avatar:")) {
+    const seed = encodeURIComponent(out.image.slice("avatar:".length));
+    out.image = `https://api.dicebear.com/6.x/thumbs/png?seed=${seed}`;
+  }
+
   return out as GraphNodeAttrs;
 }
