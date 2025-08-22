@@ -1,8 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import Sigma from 'sigma';
-import { NodeCircleProgram, EdgeLineProgram } from 'sigma/rendering';
-import { createNodeImageProgram } from '@sigma/node-image';
-import { NodeSquareProgram } from '@sigma/node-square';
+import { EdgeLineProgram } from 'sigma/rendering';
+import NodeSquareProgram from '@sigma/node-square';
 import { useGraphStore } from '../graph/GraphStore';
 import { nodeReducer } from '../graph/reducers';
 import { edgeColor, edgeSize } from '../graph/styling';
@@ -65,6 +64,19 @@ function drawHeaderBox(ctx: CanvasRenderingContext2D, d: LabelData, s: any) {
   ctx.restore();
 }
 
+const labelRenderer = (ctx: any, data: any, settings: any) => {
+  const def = getNodeTypeDef((data as any).variant);
+  def.decorate?.(ctx, data, settings);
+  if ((data as any).variant !== 'square.header') {
+    ctx.save();
+    ctx.font = `${settings.labelWeight || 600} ${settings.labelSize || 12}px ${settings.labelFont || 'Inter'}`;
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#111827';
+    ctx.fillText(data.label || '', data.x + data.size + 6, data.y);
+    ctx.restore();
+  }
+};
+
 export default function Canvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const graph = useGraphStore(s => s.graph);
@@ -78,21 +90,18 @@ export default function Canvas() {
     })();
   }, [loadGraphFromJSON]);
 
-    useEffect(() => {
-        if (!containerRef.current) return;
+  useEffect(() => {
+    if (!containerRef.current) return;
 
-        loadUserNodeTypes();
-        const detachFilters = attachGraphListenersForFilters(graph);
-        syncFiltersFromGraph(graph);
+    loadUserNodeTypes();
+    const detachFilters = attachGraphListenersForFilters(graph);
+    syncFiltersFromGraph(graph);
 
-        const ImageProgram = createNodeImageProgram();
-
-        const nodeProgramClasses = {
-          circle: NodeCircleProgram,
-          square: NodeSquareProgram,
-          image: ImageProgram,
-          default: NodeCircleProgram,
-        } as const;
+    const nodeProgramClasses = {
+      default: Sigma.nodeProgramClasses.nodeCircle,
+      circle: Sigma.nodeProgramClasses.nodeCircle,
+      square: NodeSquareProgram,
+    } as const;
 
     const edgeProgramClasses = {
       REPORTS_TO: EdgeLineProgram,
@@ -111,14 +120,6 @@ export default function Canvas() {
         graph.setNodeAttribute(key, 'x', Math.random());
         graph.setNodeAttribute(key, 'y', Math.random());
       }
-      if ((attrs as any).image) {
-        // Register the image with sigma's texture manager so it can be used by
-        // the custom node image program.  The previous code called a
-        // non-existent `setImage` function which caused a runtime error.  The
-        // current `@sigma/node-image` API exposes a `textureManager` with a
-        // `registerImage` method instead.
-        (ImageProgram as any).textureManager?.registerImage((attrs as any).image);
-      }
     });
 
     graph.forEachEdge((key, attrs) => {
@@ -128,15 +129,15 @@ export default function Canvas() {
     });
 
     const renderer = new Sigma(graph, containerRef.current, {
+      nodeProgramKey: 'shape',
       nodeProgramClasses,
       edgeProgramClasses,
-      nodeProgramKey: 'shape',
       defaultEdgeType: 'default',
       labelFont: 'Inter, system-ui, sans-serif',
       labelWeight: '600',
       labelSize: 12,
       renderLabels: true,
-      labelRenderedSizeThreshold: 6,
+      labelRenderedSizeThreshold: 5,
       zIndex: true,
     } as any);
 
@@ -153,48 +154,21 @@ export default function Canvas() {
       selectEdges([]);
     });
 
-    renderer.setSetting('nodeReducer', (node, data) => {
-      try {
-        return nodeReducer(node, data || {});
-      } catch (e) {
-        console.error('nodeReducer error:', e);
-        return { hidden: false };
-      }
-    });
-
+    renderer.setSetting('nodeReducer', nodeReducer);
     renderer.setSetting('edgeReducer', (edge, data) => {
-      try {
-        const attrs = sanitizeEdgeAttributes(data || {});
-        return {
-          ...attrs,
-          color: edgeColor(data || {}),
-          size: edgeSize(data || {}),
-        };
-      } catch (e) {
-        console.error('edgeReducer error:', e);
-        return {};
-      }
+      const attrs = sanitizeEdgeAttributes(data || {});
+      return {
+        ...attrs,
+        color: edgeColor(data || {}),
+        size: edgeSize(data || {}),
+      };
     });
-
-    (renderer as any).setSetting('hoverRenderer', (ctx: any, data: any, settings: any) => {
+    renderer.setSetting('hoverRenderer', (ctx: any, data: any, settings: any) => {
       drawHeaderBox(ctx, data as any, settings);
     });
-
-      (renderer as any).setSetting('labelRenderer', (ctx: any, data: any, settings: any) => {
-        const def = getNodeTypeDef((data as any).variant);
-        def.decorate(ctx, data, settings);
-        if ((data as any).variant !== 'square.header') {
-          ctx.save();
-          ctx.font = `${settings.labelWeight || 600} ${settings.labelSize || 12}px ${settings.labelFont || 'Inter'}`;
-          ctx.textBaseline = 'middle';
-          ctx.fillStyle = '#111827';
-          ctx.fillText(data.label || '', data.x + data.size + 6, data.y);
-          ctx.restore();
-        }
-      });
-
-    (renderer as any).setSetting('enableHovering', true);
-    (renderer as any).setSetting('enableEdgeHoverEvents', false);
+    renderer.setSetting('labelRenderer', labelRenderer);
+    renderer.setSetting('enableHovering', true);
+    renderer.setSetting('enableEdgeHoverEvents', false);
 
     return () => {
       detachFilters();

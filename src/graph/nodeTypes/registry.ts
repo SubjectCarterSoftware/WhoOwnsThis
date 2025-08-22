@@ -20,7 +20,7 @@ export const BUILTIN_NODE_TYPES: Record<NodeVariant, NodeTypeDef> = {
   plain: { base: "circle", decorate: () => {} },
   "circle.statusRing": { base: "circle", decorate: drawCircleStatusRing },
   "circle.kpiSegments": { base: "circle", decorate: drawCircleKpiSegments },
-  "circle.person": { base: "image", decorate: drawCirclePersonPresence, defaults: { size: 16 } },
+  "circle.person": { base: "circle", decorate: drawCirclePersonPresence, defaults: { size: 16 } },
   "square.header": { base: "square", decorate: drawSquareHeader },
   "square.accentProgress": { base: "square", decorate: drawSquareAccentProgress },
   "square.cornerTag": { base: "square", decorate: drawSquareCornerTag },

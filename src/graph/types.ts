@@ -1,5 +1,5 @@
 export type NodeKind = "person" | "team" | "project" | "ticket" | "server" | "process" | string;
-export type NodeShape = "circle" | "square" | "image";
+export type NodeShape = "circle" | "square";
 export type NodeVariant =
   | "plain"
   | "circle.statusRing"
@@ -20,6 +20,7 @@ export interface NodeUI {
   presence?: "online" | "away" | "offline";
   ports?: Array<"N" | "S" | "E" | "W">;
   iconText?: string;
+  emoji?: string;
 }
 
 export interface GraphNodeAttrs {
@@ -36,5 +37,4 @@ export interface GraphNodeAttrs {
   team?: string;
   domain?: string;
   tags?: string[];
-  image?: string;
 }
