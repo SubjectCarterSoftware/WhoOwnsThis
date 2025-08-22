@@ -1,9 +1,67 @@
 import React, { useEffect, useRef } from 'react';
 import Sigma from 'sigma';
 import { NodeCircleProgram, EdgeLineProgram } from 'sigma/rendering';
+import { createNodeImageProgram } from '@sigma/node-image';
+import NodeSquareProgram from '@sigma/node-square';
 import { useGraphStore } from '../graph/GraphStore';
-import { nodeColor, nodeSize, edgeColor, edgeSize } from '../graph/styling';
-import { sanitizeNodeAttributes, sanitizeEdgeAttributes } from '../graph/sigmaUtils';
+import { nodeReducer } from '../graph/reducers';
+import { edgeColor, edgeSize } from '../graph/styling';
+import { sanitizeEdgeAttributes } from '../graph/sigmaUtils';
+
+type LabelData = {
+  key: string;
+  label: string;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  headerColor?: string;
+};
+
+function drawHeaderBox(ctx: CanvasRenderingContext2D, d: LabelData, s: any) {
+  const padX = 8, padY = 6, headerH = 18, radius = 8;
+  const font = `${s.labelWeight || 600} ${s.labelSize || 12}px ${s.labelFont || 'Inter'}`;
+  ctx.save();
+  ctx.font = font;
+
+  const text = d.label || '';
+  const textW = ctx.measureText(text).width;
+  const w = Math.max(140, textW + padX * 2);
+  const h = headerH + 6 + (s.labelSize || 12) + padY;
+  const x = d.x - w / 2;
+  const y = d.y - d.size - h - 6;
+
+  const rrect = (x: number, y: number, w: number, h: number, r: number) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  };
+
+  rrect(x, y, w, h, radius);
+  ctx.fillStyle = '#fff';
+  ctx.globalAlpha = 0.95;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w, y + headerH);
+  ctx.lineTo(x, y + headerH);
+  ctx.closePath();
+  ctx.fillStyle = d.headerColor || d.color || '#111827';
+  ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + padX, y + headerH / 2);
+
+  ctx.restore();
+}
 
 export default function Canvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -15,11 +73,12 @@ export default function Canvas() {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const ImageProgram = createNodeImageProgram();
+
     const nodeProgramClasses = {
-      Person: NodeCircleProgram,
-      Project: NodeCircleProgram,
-      Team: NodeCircleProgram,
       default: NodeCircleProgram,
+      square: NodeSquareProgram,
+      image: ImageProgram,
     } as const;
 
     const edgeProgramClasses = {
@@ -39,6 +98,9 @@ export default function Canvas() {
         graph.setNodeAttribute(key, 'x', Math.random());
         graph.setNodeAttribute(key, 'y', Math.random());
       }
+      if ((attrs as any).image) {
+        ImageProgram.setImage((attrs as any).image, (attrs as any).image);
+      }
     });
 
     graph.forEachEdge((key, attrs) => {
@@ -50,8 +112,15 @@ export default function Canvas() {
     const renderer = new Sigma(graph, containerRef.current, {
       nodeProgramClasses,
       edgeProgramClasses,
+      nodeProgramKey: 'type',
       defaultNodeType: 'default',
       defaultEdgeType: 'default',
+      labelFont: 'Inter, system-ui, sans-serif',
+      labelWeight: '600',
+      labelSize: 12,
+      renderLabels: true,
+      labelRenderedSizeThreshold: 6,
+      zIndex: true,
     });
 
     renderer.on('clickNode', ({ node }) => {
@@ -67,33 +136,20 @@ export default function Canvas() {
       selectEdges([]);
     });
 
-    renderer.setSetting("nodeReducer", (node, data) => {
+    renderer.setSetting('nodeReducer', (node, data) => {
       try {
-        const attrs = sanitizeNodeAttributes(data || {});
+        const reduced = nodeReducer(node, data || {});
         const types = (filters?.nodeTypes ?? []) as string[];
-        const type = (data?.type ?? "").toString();
-        // No filters => show all
-        if (!types.length) {
-          return {
-            ...attrs,
-            color: nodeColor(data || {}),
-            size: nodeSize(graph, node, data || {}),
-          };
-        }
-        // Active filters => hide non-matching
-        if (!types.includes(type)) return { hidden: true };
-        return {
-          ...attrs,
-          color: nodeColor(data || {}),
-          size: nodeSize(graph, node, data || {}),
-        };
+        const kind = (data as any)?.kind || 'default';
+        if (types.length && !types.includes(kind)) return { ...reduced, hidden: true };
+        return reduced;
       } catch (e) {
-        console.error("nodeReducer error:", e);
+        console.error('nodeReducer error:', e);
         return { hidden: false };
       }
     });
 
-    renderer.setSetting("edgeReducer", (edge, data) => {
+    renderer.setSetting('edgeReducer', (edge, data) => {
       try {
         const attrs = sanitizeEdgeAttributes(data || {});
         return {
@@ -102,10 +158,26 @@ export default function Canvas() {
           size: edgeSize(data || {}),
         };
       } catch (e) {
-        console.error("edgeReducer error:", e);
+        console.error('edgeReducer error:', e);
         return {};
       }
     });
+
+    renderer.setSetting('hoverRenderer', (ctx, data, settings) => {
+      drawHeaderBox(ctx, data as any, settings);
+    });
+
+    renderer.setSetting('labelRenderer', (ctx, data: any, settings: any) => {
+      ctx.save();
+      ctx.font = `${settings.labelWeight || 600} ${settings.labelSize || 12}px ${settings.labelFont || 'Inter'}`;
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#111827';
+      ctx.fillText(data.label || '', data.x + data.size + 6, data.y);
+      ctx.restore();
+    });
+
+    renderer.setSetting('enableHovering', true);
+    renderer.setSetting('enableEdgeHoverEvents', false);
 
     return () => renderer.kill();
   }, [graph, selectNodes, selectEdges, filters]);

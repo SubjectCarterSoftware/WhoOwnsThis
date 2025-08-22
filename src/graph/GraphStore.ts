@@ -87,12 +87,20 @@ export const useGraphStore = create<GraphStore>((set, get) => {
     },
     addNode(attrs) {
       pushHistory();
-      const key = attrs.key || `node:${nanoid(6)}`;
+      const key = attrs.key || `node:${crypto.randomUUID()}`;
       const withPos = { ...attrs } as Record<string, any>;
       if (typeof withPos.x !== 'number' || typeof withPos.y !== 'number') {
         withPos.x = Math.random();
         withPos.y = Math.random();
       }
+      withPos.size ??= 16;
+      withPos.kind ??= 'information';
+      withPos.type ??=
+        withPos.kind === 'asset'
+          ? 'square'
+          : withPos.kind === 'person'
+          ? 'image'
+          : 'circle';
       const { graph } = get();
       graph.addNode(key, withPos);
       set({ graph });
@@ -116,6 +124,14 @@ export const useGraphStore = create<GraphStore>((set, get) => {
         next.x = typeof attrs.x === 'number' ? attrs.x : Math.random();
         next.y = typeof attrs.y === 'number' ? attrs.y : Math.random();
       }
+      next.size = Math.max(14, next.size || 14);
+      next.kind ??= attrs.kind ?? 'information';
+      next.type ??=
+        next.kind === 'asset'
+          ? 'square'
+          : next.kind === 'person'
+          ? 'image'
+          : 'circle';
       graph.replaceNodeAttributes(key, next);
       set({ graph });
     },
