@@ -1,9 +1,7 @@
 export function sanitizeNodeAttributes(data: Record<string, any>) {
-  const { type, ...rest } = data;
-  return rest;
+  return { ...data };
 }
 
 export function sanitizeEdgeAttributes(data: Record<string, any>) {
-  const { type, ...rest } = data;
-  return rest;
+  return { ...data };
 }

@@ -7,7 +7,7 @@ import { useGraphStore } from '../graph/GraphStore';
 import { nodeReducer } from '../graph/reducers';
 import { edgeColor, edgeSize } from '../graph/styling';
 import { sanitizeEdgeAttributes } from '../graph/sigmaUtils';
-import { attachGraphListenersForFilters } from '../filters/sync';
+import { attachGraphListenersForFilters, syncFiltersFromGraph } from '../filters/sync';
 
 type LabelData = {
   key: string;
@@ -80,15 +80,17 @@ export default function Canvas() {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const detachFilters = attachGraphListenersForFilters(graph);
+      const detachFilters = attachGraphListenersForFilters(graph);
+      syncFiltersFromGraph(graph);
 
-    const ImageProgram = createNodeImageProgram();
+      const ImageProgram = createNodeImageProgram();
 
-    const nodeProgramClasses = {
-      default: NodeCircleProgram,
-      square: NodeSquareProgram,
-      image: ImageProgram,
-    } as const;
+      const nodeProgramClasses = {
+        circle: NodeCircleProgram,
+        square: NodeSquareProgram,
+        image: ImageProgram,
+        default: NodeCircleProgram,
+      } as const;
 
     const edgeProgramClasses = {
       REPORTS_TO: EdgeLineProgram,
@@ -100,15 +102,15 @@ export default function Canvas() {
     } as const;
 
     graph.forEachNode((key, attrs) => {
-      if (!nodeProgramClasses[attrs.type as keyof typeof nodeProgramClasses]) {
-        graph.setNodeAttribute(key, 'type', 'default');
+      if (!nodeProgramClasses[attrs.shape as keyof typeof nodeProgramClasses]) {
+        graph.setNodeAttribute(key, 'shape', 'circle');
       }
       if (typeof attrs.x !== 'number' || typeof attrs.y !== 'number') {
         graph.setNodeAttribute(key, 'x', Math.random());
         graph.setNodeAttribute(key, 'y', Math.random());
       }
       if ((attrs as any).image) {
-        ImageProgram.setImage((attrs as any).image, (attrs as any).image);
+        (ImageProgram as any).setImage((attrs as any).image, (attrs as any).image);
       }
     });
 
@@ -121,8 +123,7 @@ export default function Canvas() {
     const renderer = new Sigma(graph, containerRef.current, {
       nodeProgramClasses,
       edgeProgramClasses,
-      nodeProgramKey: 'type',
-      defaultNodeType: 'default',
+      nodeProgramKey: 'shape',
       defaultEdgeType: 'default',
       labelFont: 'Inter, system-ui, sans-serif',
       labelWeight: '600',
@@ -130,7 +131,7 @@ export default function Canvas() {
       renderLabels: true,
       labelRenderedSizeThreshold: 6,
       zIndex: true,
-    });
+    } as any);
 
     renderer.on('clickNode', ({ node }) => {
       selectEdges([]);
@@ -168,11 +169,11 @@ export default function Canvas() {
       }
     });
 
-    renderer.setSetting('hoverRenderer', (ctx, data, settings) => {
+    (renderer as any).setSetting('hoverRenderer', (ctx: any, data: any, settings: any) => {
       drawHeaderBox(ctx, data as any, settings);
     });
 
-    renderer.setSetting('labelRenderer', (ctx, data: any, settings: any) => {
+    (renderer as any).setSetting('labelRenderer', (ctx: any, data: any, settings: any) => {
       ctx.save();
       ctx.font = `${settings.labelWeight || 600} ${settings.labelSize || 12}px ${settings.labelFont || 'Inter'}`;
       ctx.textBaseline = 'middle';
@@ -181,8 +182,8 @@ export default function Canvas() {
       ctx.restore();
     });
 
-    renderer.setSetting('enableHovering', true);
-    renderer.setSetting('enableEdgeHoverEvents', false);
+    (renderer as any).setSetting('enableHovering', true);
+    (renderer as any).setSetting('enableEdgeHoverEvents', false);
 
     return () => {
       detachFilters();
