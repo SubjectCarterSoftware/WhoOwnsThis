@@ -35,6 +35,10 @@ export default function Canvas() {
       if (!nodeProgramClasses[attrs.type as keyof typeof nodeProgramClasses]) {
         graph.setNodeAttribute(key, 'type', 'default');
       }
+      if (typeof attrs.x !== 'number' || typeof attrs.y !== 'number') {
+        graph.setNodeAttribute(key, 'x', Math.random());
+        graph.setNodeAttribute(key, 'y', Math.random());
+      }
     });
 
     graph.forEachEdge((key, attrs) => {
