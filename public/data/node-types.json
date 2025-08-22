@@ -1,0 +1,9 @@
+{
+  "square.header": {
+    "defaults": { "size": 18 },
+    "uiSchema": { "header.color": { "type": "color" } }
+  },
+  "circle.customRing": {
+    "base": "circle"
+  }
+}
