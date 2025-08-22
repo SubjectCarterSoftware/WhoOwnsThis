@@ -69,6 +69,13 @@ export default function Canvas() {
   const graph = useGraphStore(s => s.graph);
   const selectNodes = useGraphStore(s => s.selectNodes);
   const selectEdges = useGraphStore(s => s.selectEdges);
+  const loadGraphFromJSON = useGraphStore(s => s.loadGraphFromJSON);
+
+  useEffect(() => {
+    (async () => {
+      await loadGraphFromJSON('/data/sample-graph.json');
+    })();
+  }, [loadGraphFromJSON]);
 
   useEffect(() => {
     if (!containerRef.current) return;

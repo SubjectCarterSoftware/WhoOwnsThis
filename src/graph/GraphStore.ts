@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import Graph from 'graphology';
 import { nanoid } from 'nanoid';
-import { importFromJSON, exportToJSON } from './graphHelpers';
+import { importFromJSON, exportToJSON, createEmptyGraph } from './graphHelpers';
 import { GraphologyJSON } from '../types/graph';
-import sampleGraph from '../../samples/sample.graph.json';
+import { normalizeGraph } from './persistence';
 import { runForceAtlas2, applyCircular } from './layouts';
 
 type Selection = { nodes: string[]; edges: string[] };
@@ -15,7 +15,7 @@ interface GraphStore {
   selection: Selection;
   layout: Layout;
   filters: { nodeTypes: string[] };
-  loadGraphFromJSON: (json: GraphologyJSON) => void;
+  loadGraphFromJSON: (json: GraphologyJSON | string) => Promise<void>;
   exportGraphJSON: () => GraphologyJSON;
   addNode: (attrs: Record<string, any>) => string;
   addEdge: (edge: { source: string; target: string; attributes?: Record<string, any>; key?: string; undirected?: boolean }) => string;
@@ -38,18 +38,6 @@ function cloneGraph(graph: Graph): GraphologyJSON {
   return exportToJSON(graph);
 }
 
-const initialGraph = (() => {
-  const g = importFromJSON(sampleGraph as GraphologyJSON);
-  const needsLayout = g.nodes().some(key => {
-    const attrs = g.getNodeAttributes(key);
-    return typeof attrs.x !== 'number' || typeof attrs.y !== 'number';
-  });
-  if (needsLayout) {
-    applyCircular(g);
-  }
-  return g;
-})();
-
 export const useGraphStore = create<GraphStore>((set, get) => {
   const history: GraphologyJSON[] = [];
   const future: GraphologyJSON[] = [];
@@ -67,11 +55,19 @@ export const useGraphStore = create<GraphStore>((set, get) => {
   }
 
   return {
-    graph: initialGraph,
+    graph: createEmptyGraph(),
     selection: { nodes: [], edges: [] },
     layout: null,
     filters: { nodeTypes: [] },
-    loadGraphFromJSON(json) {
+    async loadGraphFromJSON(jsonOrUrl) {
+      let json: GraphologyJSON;
+      if (typeof jsonOrUrl === 'string') {
+        const res = await fetch(jsonOrUrl);
+        const raw = await res.json();
+        json = normalizeGraph(raw);
+      } else {
+        json = normalizeGraph(jsonOrUrl);
+      }
       const graph = importFromJSON(json);
       const needsLayout = graph.nodes().some(key => {
         const attrs = graph.getNodeAttributes(key);

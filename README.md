@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open the sample graph from `samples/sample.graph.json` using the Open button.
+Open the sample graph from `public/data/sample-graph.json` using the Open button.
 
 ## Build
 
