@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@sigma/node-border": "^3.0.0",
-    "@sigma/node-image": "^3.0.0",
     "@sigma/node-square": "^3.0.0",
     "graphology": "^0.25.1",
     "graphology-layout": "^0.6.1",

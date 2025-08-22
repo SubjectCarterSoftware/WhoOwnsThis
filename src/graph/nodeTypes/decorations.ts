@@ -84,6 +84,28 @@ export function drawCirclePersonPresence(ctx: CanvasRenderingContext2D, d: any) 
   ctx.globalAlpha = 0.15;
   ctx.fill();
   ctx.globalAlpha = 1;
+
+  if (ui.emoji) {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(x, y, size - 2, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.font = `${Math.floor(size)}px Inter`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(ui.emoji, x, y + 1);
+  } else if (ui.iconText) {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(x, y, size - 2, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = "#374151";
+    ctx.font = `${Math.max(10, Math.floor(size * 0.9))}px Inter`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(ui.iconText, x, y + 0.5);
+  }
+
   ctx.fillStyle = dot;
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 2;
