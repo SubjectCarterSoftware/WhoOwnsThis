@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import Sigma from 'sigma';
 import { NodeCircleProgram, EdgeLineProgram } from 'sigma/rendering';
 import { createNodeImageProgram } from '@sigma/node-image';
-import NodeSquareProgram from '@sigma/node-square';
+import { NodeSquareProgram } from '@sigma/node-square';
 import { useGraphStore } from '../graph/GraphStore';
 import { nodeReducer } from '../graph/reducers';
 import { edgeColor, edgeSize } from '../graph/styling';
