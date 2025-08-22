@@ -1,5 +1,6 @@
 import Graph from 'graphology';
 import { GraphologyJSON, DEFAULT_GRAPH } from '../types/graph';
+import { safeAddNode } from './safeMutations';
 
 export function createEmptyGraph(): Graph {
   const graph = new Graph(DEFAULT_GRAPH.options);
@@ -17,7 +18,7 @@ export function importFromJSON(json: GraphologyJSON): Graph {
     for (const [k, v] of Object.entries(json.attributes)) graph.setAttribute(k, v);
   }
   for (const node of json.nodes) {
-    graph.addNode(node.key, node.attributes || {});
+    safeAddNode(graph, node.key, node.attributes || {});
   }
   for (const edge of json.edges) {
     const undirected = edge.undirected ?? false;

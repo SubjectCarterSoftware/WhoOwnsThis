@@ -5,6 +5,7 @@ import { importFromJSON, exportToJSON } from './graphHelpers';
 import { GraphologyJSON } from '../types/graph';
 import sampleGraph from '../../samples/sample.graph.json';
 import { runForceAtlas2, applyCircular } from './layouts';
+import { safeReplaceNodeAttributes, safeAddNode } from './safeMutations';
 
 type Selection = { nodes: string[]; edges: string[] };
 
@@ -88,13 +89,8 @@ export const useGraphStore = create<GraphStore>((set, get) => {
     addNode(attrs) {
       pushHistory();
       const key = attrs.key || `node:${nanoid(6)}`;
-      const withPos = { ...attrs } as Record<string, any>;
-      if (typeof withPos.x !== 'number' || typeof withPos.y !== 'number') {
-        withPos.x = Math.random();
-        withPos.y = Math.random();
-      }
       const { graph } = get();
-      graph.addNode(key, withPos);
+      safeAddNode(graph, key, attrs);
       set({ graph });
       return key;
     },
@@ -110,13 +106,7 @@ export const useGraphStore = create<GraphStore>((set, get) => {
     updateNodeAttributes(key, patch) {
       pushHistory();
       const { graph } = get();
-      const attrs = graph.getNodeAttributes(key);
-      const next = { ...attrs, ...patch } as Record<string, any>;
-      if (typeof next.x !== 'number' || typeof next.y !== 'number') {
-        next.x = typeof attrs.x === 'number' ? attrs.x : Math.random();
-        next.y = typeof attrs.y === 'number' ? attrs.y : Math.random();
-      }
-      graph.replaceNodeAttributes(key, next);
+      safeReplaceNodeAttributes(graph, key, patch);
       set({ graph });
     },
     updateEdgeAttributes(key, patch) {

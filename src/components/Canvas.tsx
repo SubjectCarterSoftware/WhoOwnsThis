@@ -2,8 +2,27 @@ import React, { useEffect, useRef } from 'react';
 import Sigma from 'sigma';
 import { NodeCircleProgram, EdgeLineProgram } from 'sigma/rendering';
 import { useGraphStore } from '../graph/GraphStore';
-import { nodeColor, nodeSize, edgeColor, edgeSize } from '../graph/styling';
-import { sanitizeNodeAttributes, sanitizeEdgeAttributes } from '../graph/sigmaUtils';
+import { edgeColor, edgeSize } from '../graph/styling';
+import { sanitizeEdgeAttributes } from '../graph/sigmaUtils';
+import { createNodeReducer } from '../graph/reducers';
+
+function seedMissingPositions(graph: any) {
+  graph.forEachNode((n: string, a: any) => {
+    if (typeof a.x !== 'number') graph.setNodeAttribute(n, 'x', Math.random());
+    if (typeof a.y !== 'number') graph.setNodeAttribute(n, 'y', Math.random());
+  });
+}
+
+function assertPositions(graph: any, tag = '') {
+  const bad: string[] = [];
+  graph.forEachNode((n: string, a: any) => {
+    if (typeof a.x !== 'number' || typeof a.y !== 'number') bad.push(n);
+  });
+  if (bad.length) {
+    // eslint-disable-next-line no-console
+    console.error(`[${tag}] nodes missing x/y:`, bad.slice(0, 25), bad.length > 25 ? `(+${bad.length - 25})` : '');
+  }
+}
 
 export default function Canvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -11,6 +30,7 @@ export default function Canvas() {
   const selectNodes = useGraphStore(s => s.selectNodes);
   const selectEdges = useGraphStore(s => s.selectEdges);
   const filters = useGraphStore(s => s.filters);
+  const rendererRef = useRef<Sigma | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -31,13 +51,12 @@ export default function Canvas() {
       default: EdgeLineProgram,
     } as const;
 
+    seedMissingPositions(graph);
+    assertPositions(graph, 'initial');
+
     graph.forEachNode((key, attrs) => {
       if (!nodeProgramClasses[attrs.type as keyof typeof nodeProgramClasses]) {
         graph.setNodeAttribute(key, 'type', 'default');
-      }
-      if (typeof attrs.x !== 'number' || typeof attrs.y !== 'number') {
-        graph.setNodeAttribute(key, 'x', Math.random());
-        graph.setNodeAttribute(key, 'y', Math.random());
       }
     });
 
@@ -53,6 +72,7 @@ export default function Canvas() {
       defaultNodeType: 'default',
       defaultEdgeType: 'default',
     });
+    rendererRef.current = renderer;
 
     renderer.on('clickNode', ({ node }) => {
       selectEdges([]);
@@ -67,33 +87,9 @@ export default function Canvas() {
       selectEdges([]);
     });
 
-    renderer.setSetting("nodeReducer", (node, data) => {
-      try {
-        const attrs = sanitizeNodeAttributes(data || {});
-        const types = (filters?.nodeTypes ?? []) as string[];
-        const type = (data?.type ?? "").toString();
-        // No filters => show all
-        if (!types.length) {
-          return {
-            ...attrs,
-            color: nodeColor(data || {}),
-            size: nodeSize(graph, node, data || {}),
-          };
-        }
-        // Active filters => hide non-matching
-        if (!types.includes(type)) return { hidden: true };
-        return {
-          ...attrs,
-          color: nodeColor(data || {}),
-          size: nodeSize(graph, node, data || {}),
-        };
-      } catch (e) {
-        console.error("nodeReducer error:", e);
-        return { hidden: false };
-      }
-    });
+    renderer.setSetting('nodeReducer', createNodeReducer(graph, filters));
 
-    renderer.setSetting("edgeReducer", (edge, data) => {
+    renderer.setSetting('edgeReducer', (edge, data) => {
       try {
         const attrs = sanitizeEdgeAttributes(data || {});
         return {
@@ -102,13 +98,26 @@ export default function Canvas() {
           size: edgeSize(data || {}),
         };
       } catch (e) {
-        console.error("edgeReducer error:", e);
+        console.error('edgeReducer error:', e);
         return {};
       }
     });
 
-    return () => renderer.kill();
-  }, [graph, selectNodes, selectEdges, filters]);
+    return () => {
+      renderer.kill();
+      rendererRef.current = null;
+    };
+  }, [graph, selectNodes, selectEdges]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    renderer.setSetting('nodeReducer', createNodeReducer(graph, filters));
+    assertPositions(graph, 'before-filter');
+    seedMissingPositions(graph);
+    assertPositions(graph, 'after-filter');
+    renderer.refresh();
+  }, [filters, graph]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }
