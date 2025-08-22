@@ -1,5 +1,6 @@
 import { KIND_THEME } from './theme';
 import type { NodeReducer } from 'sigma/types';
+import { useFiltersStore, makeNodePredicate } from '../state/filtersStore';
 
 export const nodeReducer: NodeReducer = (id, attrs) => {
   const kind = (attrs as any).kind || 'default';
@@ -12,11 +13,16 @@ export const nodeReducer: NodeReducer = (id, attrs) => {
     type = kind === 'asset' ? 'square' : kind === 'person' ? 'image' : 'circle';
   }
 
-  return {
+  const { selected, search } = useFiltersStore.getState();
+  const visible = makeNodePredicate(selected, search)(attrs);
+
+  const base = {
     ...(attrs as any),
     size,
     color: theme.color,
     headerColor: theme.header,
     type,
   } as any;
+
+  return visible ? base : { ...base, hidden: true };
 };

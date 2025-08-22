@@ -7,6 +7,7 @@ import { useGraphStore } from '../graph/GraphStore';
 import { nodeReducer } from '../graph/reducers';
 import { edgeColor, edgeSize } from '../graph/styling';
 import { sanitizeEdgeAttributes } from '../graph/sigmaUtils';
+import { attachGraphListenersForFilters } from '../filters/sync';
 
 type LabelData = {
   key: string;
@@ -68,10 +69,11 @@ export default function Canvas() {
   const graph = useGraphStore(s => s.graph);
   const selectNodes = useGraphStore(s => s.selectNodes);
   const selectEdges = useGraphStore(s => s.selectEdges);
-  const filters = useGraphStore(s => s.filters);
 
   useEffect(() => {
     if (!containerRef.current) return;
+
+    const detachFilters = attachGraphListenersForFilters(graph);
 
     const ImageProgram = createNodeImageProgram();
 
@@ -138,11 +140,7 @@ export default function Canvas() {
 
     renderer.setSetting('nodeReducer', (node, data) => {
       try {
-        const reduced = nodeReducer(node, data || {});
-        const types = (filters?.nodeTypes ?? []) as string[];
-        const kind = (data as any)?.kind || 'default';
-        if (types.length && !types.includes(kind)) return { ...reduced, hidden: true };
-        return reduced;
+        return nodeReducer(node, data || {});
       } catch (e) {
         console.error('nodeReducer error:', e);
         return { hidden: false };
@@ -179,8 +177,11 @@ export default function Canvas() {
     renderer.setSetting('enableHovering', true);
     renderer.setSetting('enableEdgeHoverEvents', false);
 
-    return () => renderer.kill();
-  }, [graph, selectNodes, selectEdges, filters]);
+    return () => {
+      detachFilters();
+      renderer.kill();
+    };
+  }, [graph, selectNodes, selectEdges]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }
