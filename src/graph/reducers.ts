@@ -1,20 +1,7 @@
-import { KIND_THEME } from './theme';
-import { useFiltersStore, makeNodePredicate } from '../state/filtersStore';
+import type { NodeReducer } from "sigma/types";
 
-export const nodeReducer = (id: string, attrs: Record<string, any>) => {
-  const kind = (attrs as any).kind || 'default';
-  const theme = (KIND_THEME as any)[kind] || KIND_THEME.default;
-
+export const nodeReducer: NodeReducer = (id, attrs) => {
   const base = { ...attrs } as any;
-  const { selected, search } = useFiltersStore.getState();
-  const visible = makeNodePredicate(selected, search)(attrs);
-
-  const visual = {
-    ...base,
-    size: Math.max(14, (base as any).size || 14),
-    color: theme.color,
-    headerColor: theme.header,
-  } as any;
-
-  return visible ? visual : { ...visual, hidden: true };
+  const visible = true;
+  return visible ? base : { ...base, hidden: true };
 };

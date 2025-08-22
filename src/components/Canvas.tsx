@@ -8,6 +8,7 @@ import { nodeReducer } from '../graph/reducers';
 import { edgeColor, edgeSize } from '../graph/styling';
 import { sanitizeEdgeAttributes } from '../graph/sigmaUtils';
 import { attachGraphListenersForFilters, syncFiltersFromGraph } from '../filters/sync';
+import { getNodeTypeDef, loadUserNodeTypes } from '../graph/nodeTypes/registry';
 
 type LabelData = {
   key: string;
@@ -77,20 +78,21 @@ export default function Canvas() {
     })();
   }, [loadGraphFromJSON]);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
+    useEffect(() => {
+        if (!containerRef.current) return;
 
-      const detachFilters = attachGraphListenersForFilters(graph);
-      syncFiltersFromGraph(graph);
+        loadUserNodeTypes();
+        const detachFilters = attachGraphListenersForFilters(graph);
+        syncFiltersFromGraph(graph);
 
-      const ImageProgram = createNodeImageProgram();
+        const ImageProgram = createNodeImageProgram();
 
-      const nodeProgramClasses = {
-        circle: NodeCircleProgram,
-        square: NodeSquareProgram,
-        image: ImageProgram,
-        default: NodeCircleProgram,
-      } as const;
+        const nodeProgramClasses = {
+          circle: NodeCircleProgram,
+          square: NodeSquareProgram,
+          image: ImageProgram,
+          default: NodeCircleProgram,
+        } as const;
 
     const edgeProgramClasses = {
       REPORTS_TO: EdgeLineProgram,
@@ -173,14 +175,18 @@ export default function Canvas() {
       drawHeaderBox(ctx, data as any, settings);
     });
 
-    (renderer as any).setSetting('labelRenderer', (ctx: any, data: any, settings: any) => {
-      ctx.save();
-      ctx.font = `${settings.labelWeight || 600} ${settings.labelSize || 12}px ${settings.labelFont || 'Inter'}`;
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#111827';
-      ctx.fillText(data.label || '', data.x + data.size + 6, data.y);
-      ctx.restore();
-    });
+      (renderer as any).setSetting('labelRenderer', (ctx: any, data: any, settings: any) => {
+        const def = getNodeTypeDef((data as any).variant);
+        def.decorate(ctx, data, settings);
+        if ((data as any).variant !== 'square.header') {
+          ctx.save();
+          ctx.font = `${settings.labelWeight || 600} ${settings.labelSize || 12}px ${settings.labelFont || 'Inter'}`;
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#111827';
+          ctx.fillText(data.label || '', data.x + data.size + 6, data.y);
+          ctx.restore();
+        }
+      });
 
     (renderer as any).setSetting('enableHovering', true);
     (renderer as any).setSetting('enableEdgeHoverEvents', false);

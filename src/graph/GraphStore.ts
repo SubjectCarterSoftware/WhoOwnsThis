@@ -94,21 +94,9 @@ export const useGraphStore = create<GraphStore>((set, get) => {
     addNode(attrs) {
       pushHistory();
       const key = attrs.key || `node:${crypto.randomUUID()}`;
-      const withPos = { ...attrs } as Record<string, any>;
-      if (typeof withPos.x !== 'number' || typeof withPos.y !== 'number') {
-        withPos.x = Math.random();
-        withPos.y = Math.random();
-      }
-      withPos.size = Math.max(14, Number(withPos.size ?? 14));
-      withPos.kind ??= 'information';
-      withPos.shape ??=
-        withPos.kind === 'asset'
-          ? 'square'
-          : withPos.kind === 'person'
-          ? 'image'
-          : 'circle';
+      const nn = normalizeNode({ key, ...attrs });
       const { graph } = get();
-      graph.addNode(key, withPos);
+      graph.addNode(key, nn);
       set({ graph });
       return key;
     },
@@ -125,19 +113,7 @@ export const useGraphStore = create<GraphStore>((set, get) => {
       pushHistory();
       const { graph } = get();
       const attrs = graph.getNodeAttributes(key);
-      const next = { ...attrs, ...patch } as Record<string, any>;
-      if (typeof next.x !== 'number') next.x = typeof attrs.x === 'number' ? attrs.x : Math.random();
-      if (typeof next.y !== 'number') next.y = typeof attrs.y === 'number' ? attrs.y : Math.random();
-      next.size = Math.max(14, Number(next.size ?? 14));
-      next.kind = (next.kind ?? attrs.kind ?? 'information');
-      next.shape =
-        next.shape ??
-        attrs.shape ??
-        (next.kind === 'asset'
-          ? 'square'
-          : next.kind === 'person'
-          ? 'image'
-          : 'circle');
+      const next = normalizeNode({ ...attrs, ...patch, key });
       graph.replaceNodeAttributes(key, next);
       set({ graph });
     },

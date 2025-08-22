@@ -1,8 +1,7 @@
-export type InNode = Record<string, any>;
-export type OutNode = Record<string, any>;
+import type { GraphNodeAttrs, NodeVariant, NodeShape } from "./types";
 
-const SHAPE_BY_KIND: Record<string, "circle" | "square" | "image"> = {
-  person: "image", // if image atlas used; else "circle"
+const SHAPE_BY_KIND: Record<string, NodeShape> = {
+  person: "image",
   team: "circle",
   project: "square",
   ticket: "circle",
@@ -10,33 +9,29 @@ const SHAPE_BY_KIND: Record<string, "circle" | "square" | "image"> = {
   process: "circle",
 };
 
-export function normalizeNode(n: InNode): OutNode {
-  const out: OutNode = { ...n };
+const VARIANT_BY_KIND: Record<string, NodeVariant> = {
+  person: "circle.person",
+  project: "square.header",
+  ticket: "square.accentProgress",
+  server: "square.cornerTag",
+  process: "square.header",
+  team: "plain",
+};
 
-  const kind = String(out.kind || "").toLowerCase();
+export function normalizeNode(n: any): GraphNodeAttrs {
+  const out: any = { ...n };
 
-  if (typeof out.shape !== "string") {
-    if (
-      typeof out.type === "string" &&
-      ["circle", "square", "image"].includes(out.type)
-    ) {
-      out.shape = out.type;
-    } else {
-      out.shape = SHAPE_BY_KIND[kind] || "circle";
-    }
-  }
+  if (!out.kind && typeof out.type === "string" && !["circle", "square", "image"].includes(out.type))
+    out.kind = out.type;
 
-  if (!kind && typeof out.type === "string" && !["circle", "square", "image"].includes(out.type)) {
-    out.kind = out.type.toLowerCase();
-  }
+  out.shape = (out.shape || out.base || SHAPE_BY_KIND[out.kind] || "circle") as NodeShape;
+  out.variant = (out.variant || VARIANT_BY_KIND[out.kind] || "plain") as NodeVariant;
 
-  // Remove legacy type field
-  delete (out as any).type;
-
-  out.size = Math.max(14, Number(out.size ?? 14));
-
+  out.size = Math.max(14, Number(out.size ?? 16));
   if (typeof out.x !== "number") out.x = Math.random();
   if (typeof out.y !== "number") out.y = Math.random();
 
-  return out;
+  out.ui = out.ui || {};
+
+  return out as GraphNodeAttrs;
 }
