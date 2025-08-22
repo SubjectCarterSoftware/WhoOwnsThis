@@ -1,5 +1,5 @@
 export const NODE_FACET_CANDIDATES = [
-  "kind", "type", "status", "team", "owner", "domain", "category", "tags"
+  "kind", "shape", "status", "team", "domain", "tags"
 ] as const;
 
 export const EDGE_FACET_CANDIDATES = [

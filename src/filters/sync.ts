@@ -29,10 +29,10 @@ export function attachGraphListenersForFilters(graph: Graph) {
     "edgeAttributesUpdated",
   ];
 
-  events.forEach(ev => graph.on(ev, debouncedSync));
+  events.forEach(ev => (graph as any).on(ev, debouncedSync));
 
-  const unsubscribe = useFiltersStore.subscribe(
-    s => [s.selected, s.search],
+  const unsubscribe = (useFiltersStore.subscribe as any)(
+    (s: any) => [s.selected, s.search],
     debouncedSync,
     { equalityFn: shallow }
   );
@@ -40,7 +40,7 @@ export function attachGraphListenersForFilters(graph: Graph) {
   debouncedSync();
 
   return () => {
-    events.forEach(ev => graph.off(ev, debouncedSync));
+    events.forEach(ev => (graph as any).off(ev, debouncedSync));
     unsubscribe();
   };
 }

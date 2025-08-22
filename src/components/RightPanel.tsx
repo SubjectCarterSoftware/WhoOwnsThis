@@ -43,12 +43,26 @@ export default function RightPanel() {
   return (
     <div className="w-64 p-2 border-l overflow-auto">
       <h3 className="font-bold mb-2">{isNode ? 'Node' : 'Edge'}: {key}</h3>
-      {Object.entries(attrs).map(([k, v]) => (
-        <div key={k} className="mb-1">
-          <label className="text-sm block">{k}</label>
-          <input className="border w-full px-1" value={v} onChange={e => handleChange(k, e.target.value)} />
-        </div>
-      ))}
+      {isNode && (
+        <>
+          <div className="mb-1">
+            <label className="text-sm block">kind</label>
+            <input className="border w-full px-1" value={attrs.kind || ''} onChange={e => handleChange('kind', e.target.value)} />
+          </div>
+          <div className="mb-1">
+            <label className="text-sm block">shape</label>
+            <input className="border w-full px-1" value={attrs.shape || ''} onChange={e => handleChange('shape', e.target.value)} />
+          </div>
+        </>
+      )}
+      {Object.entries(attrs)
+        .filter(([k]) => !['kind', 'shape', 'x', 'y'].includes(k))
+        .map(([k, v]) => (
+          <div key={k} className="mb-1">
+            <label className="text-sm block">{k}</label>
+            <input className="border w-full px-1" value={v} onChange={e => handleChange(k, e.target.value)} />
+          </div>
+        ))}
       <button onClick={handleSave} className="mt-2 px-2 py-1 bg-white border">Save</button>
     </div>
   );

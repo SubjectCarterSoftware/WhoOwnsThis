@@ -3,8 +3,8 @@ import Graph from 'graphology';
 import { nanoid } from 'nanoid';
 import { importFromJSON, exportToJSON, createEmptyGraph } from './graphHelpers';
 import { GraphologyJSON } from '../types/graph';
-import { normalizeGraph } from './persistence';
 import { runForceAtlas2, applyCircular } from './layouts';
+import { normalizeNode } from './normalize';
 
 type Selection = { nodes: string[]; edges: string[] };
 
@@ -60,22 +60,32 @@ export const useGraphStore = create<GraphStore>((set, get) => {
     layout: null,
     filters: { nodeTypes: [] },
     async loadGraphFromJSON(jsonOrUrl) {
-      let json: GraphologyJSON;
+      let raw: any;
       if (typeof jsonOrUrl === 'string') {
         const res = await fetch(jsonOrUrl);
-        const raw = await res.json();
-        json = normalizeGraph(raw);
+        raw = await res.json();
       } else {
-        json = normalizeGraph(jsonOrUrl);
+        raw = jsonOrUrl;
       }
-      const graph = importFromJSON(json);
-      const needsLayout = graph.nodes().some(key => {
-        const attrs = graph.getNodeAttributes(key);
-        return typeof attrs.x !== 'number' || typeof attrs.y !== 'number';
+
+      const graph = new Graph();
+
+      for (const n of raw.nodes ?? []) {
+        const nn = normalizeNode(n);
+        graph.addNode(nn.key, nn);
+      }
+
+      for (const e of raw.edges ?? []) {
+        if (!graph.hasNode(e.source) || !graph.hasNode(e.target)) continue;
+        const key = e.key || `${e.source}->${e.target}:${e.label ?? 'rel'}`;
+        graph.addEdgeWithKey(key, e.source, e.target, { label: e.label, type: e.type });
+      }
+
+      graph.forEachNode((id, a) => {
+        if (typeof a.x !== 'number') graph.setNodeAttribute(id, 'x', Math.random());
+        if (typeof a.y !== 'number') graph.setNodeAttribute(id, 'y', Math.random());
       });
-      if (needsLayout) {
-        applyCircular(graph);
-      }
+
       set({ graph, selection: { nodes: [], edges: [] } });
     },
     exportGraphJSON() {
@@ -89,9 +99,9 @@ export const useGraphStore = create<GraphStore>((set, get) => {
         withPos.x = Math.random();
         withPos.y = Math.random();
       }
-      withPos.size ??= 16;
+      withPos.size = Math.max(14, Number(withPos.size ?? 14));
       withPos.kind ??= 'information';
-      withPos.type ??=
+      withPos.shape ??=
         withPos.kind === 'asset'
           ? 'square'
           : withPos.kind === 'person'
@@ -116,18 +126,18 @@ export const useGraphStore = create<GraphStore>((set, get) => {
       const { graph } = get();
       const attrs = graph.getNodeAttributes(key);
       const next = { ...attrs, ...patch } as Record<string, any>;
-      if (typeof next.x !== 'number' || typeof next.y !== 'number') {
-        next.x = typeof attrs.x === 'number' ? attrs.x : Math.random();
-        next.y = typeof attrs.y === 'number' ? attrs.y : Math.random();
-      }
-      next.size = Math.max(14, next.size || 14);
-      next.kind ??= attrs.kind ?? 'information';
-      next.type ??=
-        next.kind === 'asset'
+      if (typeof next.x !== 'number') next.x = typeof attrs.x === 'number' ? attrs.x : Math.random();
+      if (typeof next.y !== 'number') next.y = typeof attrs.y === 'number' ? attrs.y : Math.random();
+      next.size = Math.max(14, Number(next.size ?? 14));
+      next.kind = (next.kind ?? attrs.kind ?? 'information');
+      next.shape =
+        next.shape ??
+        attrs.shape ??
+        (next.kind === 'asset'
           ? 'square'
           : next.kind === 'person'
           ? 'image'
-          : 'circle';
+          : 'circle');
       graph.replaceNodeAttributes(key, next);
       set({ graph });
     },

@@ -13,8 +13,9 @@ describe('Sample graph loading', () => {
 });
 
 describe('Sigma attribute sanitization', () => {
-  it('removes type attribute', () => {
-    const result = sanitizeNodeAttributes({ label: 'Alice', type: 'Person' });
-    expect(result).toEqual({ label: 'Alice' });
+  it('preserves structural attributes', () => {
+    const input = { label: 'Alice', kind: 'person', shape: 'circle', x: 1, y: 2, size: 20 };
+    const result = sanitizeNodeAttributes(input);
+    expect(result).toEqual(input);
   });
 });
